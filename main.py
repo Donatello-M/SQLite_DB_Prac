@@ -68,7 +68,7 @@ db_cursor.execute("""CREATE TABLE IF NOT EXISTS faculties(
          USE TEXT NOT NULL,
          Min_score INTEGER NOT NULL,
          dep_ID INTEGER,
-         FOREIGN KEY (dep_ID) REFERENCES departments(dep_ID)); 
+         FOREIGN KEY (dep_ID) REFERENCES departments(dep_ID) ON DELETE CASCADE); 
 """)
 connection.commit()
 
@@ -80,8 +80,7 @@ db_cursor.execute("""CREATE TABLE IF NOT EXISTS employees(
          Rate REAL NOT NULL,
          Birth_date DATE NOT NULL,
          Salary REAL,
-         FOREIGN KEY (dep_ID) REFERENCES departments(dep_ID),
-         FOREIGN KEY (Position) REFERENCES positions(Pos_name));
+         FOREIGN KEY (dep_ID) REFERENCES departments(dep_ID) ON DELETE CASCADE);
 """)
 connection.commit()
 
@@ -89,22 +88,22 @@ db_cursor.execute("""CREATE TABLE IF NOT EXISTS kids(
          Name TEXT NOT NULL,
          ID_emp INTEGER,
          Age INTEGER NOT NULL,
-         FOREIGN KEY (ID_emp) REFERENCES employees(ID_emp));
+         FOREIGN KEY (ID_emp) REFERENCES employees(ID_emp) ON DELETE CASCADE);
 """)
 connection.commit()
 
 print('таблицы созданы')
+db_cursor.execute("PRAGMA foreign_keys=ON")
+connection.commit()
 
 dep_list = []
 fac_list = []
 id_dep = 1
 for rec in list(departments.keys()):
-    print(rec)
     dec_name = names.get_full_name()
     num_fac = len(departments[rec][1])
-    print(id_dep)
     rating = round(random.uniform(1, 5), 2)
-    id_dep += 1
+
     for i in range(len(departments[rec][1])):
         fac_name = departments[rec][1][i]
         use = departments[rec][0]
@@ -113,6 +112,7 @@ for rec in list(departments.keys()):
         fac_list.append(tup_fac)
     tup_dep = (rec, num_fac, dec_name, rating)
     dep_list.append(tup_dep)
+    id_dep += 1
 
 db_cursor.executemany("INSERT INTO departments(Dep_name, "
                       "Num_of_fac, Dec, Rating) VALUES(?, ?, ?, ?)", dep_list)
@@ -127,6 +127,7 @@ emp_list = []
 start_date = dt.date(year=1955, month=1, day=1).toordinal()
 end_date = dt.date(year=1981, month=12, day=31).toordinal()
 for i in range(100):
+    print(i, end=' ')
     dep_id = random.randint(1, 10)
     name = names.get_full_name()
     position = random.choice(list(positions.keys()))
@@ -136,6 +137,7 @@ for i in range(100):
     tup = (dep_id, name, position, rate, birth_date, salary)
     emp_list.append(tup)
 
+print()
 db_cursor.executemany("INSERT INTO employees(dep_ID, "
                       "Name, Position, Rate, Birth_date, Salary) VALUES(?, ?, ?, ?, ?, ?)", emp_list)
 connection.commit()
@@ -167,9 +169,11 @@ print(db_cursor.fetchall())
 db_cursor.execute("SELECT * FROM faculties")
 print(db_cursor.fetchall())
 db_cursor.execute("SELECT * FROM employees")
-print(db_cursor.fetchall())
+print(db_cursor.fetchmany(10))
 db_cursor.execute("SELECT * FROM kids")
-print(db_cursor.fetchall())
+print(db_cursor.fetchmany(15))
+
+db_cursor.execute("PRAGMA foreign_keys=OFF")
 
 db_cursor.execute("DROP TABLE IF EXISTS departments;")
 connection.commit()
